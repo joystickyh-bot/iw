@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Warehouse · 에이전트 이미지 창고</title>
+  <style>
+    :root {
+      --bg: #0c0c0f;
+      --surface: #16161a;
+      --surface2: #1e1e24;
+      --border: #2a2a32;
+      --text: #f0f0f2;
+      --text-muted: #8b8b96;
+      --accent: #7c6cff;
+      --accent-hover: #9588ff;
+      --danger: #ff5c5c;
+      --success: #3dd68c;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* Header */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(12, 12, 15, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.3px;
+    }
+
+    .logo span {
+      background: linear-gradient(135deg, #7c6cff, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+
+    .btn-ghost {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: #25252d; }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid transparent;
+    }
+    .btn-danger:hover { background: rgba(255, 92, 92, 0.1); }
+
+    /* Main */
+    main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 28px 24px 80px;
+    }
+
+    /* Stats bar */
+    .stats {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 20px;
+      min-width: 120px;
+    }
+
+    .stat-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Filters */
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 11px 16px 11px 40px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+    }
+
+    .search-box input:focus {
+      border-color: var(--accent);
+    }
+
+    .search-box::before {
+      content: "🔍";
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      opacity: 0.6;
+    }
+
+    .tag-filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tag-chip {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tag-chip.active, .tag-chip:hover {
+      background: rgba(124, 108, 255, 0.15);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Gallery */
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 24px -8px rgba(0,0,0,0.4);
+    }
+
+    .card-img-wrap {
+      aspect-ratio: 4/3;
+      background: var(--surface2);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .card-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .card-img-wrap .placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .card-body {
+      padding: 14px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .card-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(124, 108, 255, 0.12);
+      color: #a5b4fc;
+    }
+
+    .card-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .card-actions {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 6px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .card:hover .card-actions { opacity: 1; }
+
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: none;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      backdrop-filter: blur(4px);
+    }
+
+    .icon-btn:hover { background: rgba(0,0,0,0.8); }
+
+    /* Empty state */
+    .empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.show { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 480px;
+      padding: 28px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal h3 {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 11px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .form-group textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 24px;
+    }
+
+    /* Preview in modal */
+    .preview-box {
+      margin-top: 12px;
+      border-radius: 10px;
+      overflow: hidden;
+      max-height: 180px;
+      background: var(--surface2);
+      display: none;
+    }
+
+    .preview-box img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      z-index: 300;
+      transition: transform 0.25s ease;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.success { border-color: var(--success); }
+    .toast.error { border-color: var(--danger); }
+
+    /* Password gate (optional) */
+    #gate {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #gate.hidden { display: none; }
+
+    .gate-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .gate-box h2 {
+      margin-bottom: 8px;
+      font-size: 20px;
+    }
+
+    .gate-box p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+
+    .gate-box input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 16px;
+      margin-bottom: 12px;
+      outline: none;
+      text-align: center;
+    }
+
+    .gate-box input:focus { border-color: var(--accent); }
+
+    /* Lightbox */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 400;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .lightbox.show { display: flex; }
+
+    .lightbox img {
+      max-width: 92vw;
+      max-height: 88vh;
+      border-radius: 8px;
+      object-fit: contain;
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 20px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Optional simple password gate -->
+  <div id="gate">
+    <div class="gate-box">
+      <h2>🔐 Image Warehouse</h2>
+      <p>비밀번호를 입력하세요</p>
+      <input type="password" id="gate-input" placeholder="비밀번호" onkeydown="if(event.key==='Enter') unlock()">
+      <button class="btn btn-primary" style="width:100%" onclick="unlock()">입장</button>
+      <p style="margin-top:16px;font-size:12px;color:var(--text-muted)">기본: <strong>warehouse</strong></p>
+    </div>
+  </div>
+
+  <header>
+    <div class="logo">
+      <span>◈</span> Image Warehouse
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost" onclick="exportData()">⬇ 내보내기</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('import-file').click()">⬆ 가져오기</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+      <button class="btn btn-primary" onclick="openAddModal()">＋ 이미지 추가</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value" id="stat-total">0</div>
+        <div class="stat-label">전체 이미지</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="stat-tags">0</div>
+        <div class="stat-label">태그 종류</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <input type="text" id="search" placeholder="제목이나 태그로 검색..." oninput="render()">
+      </div>
+      <div class="tag-filters" id="tag-filters"></div>
+    </div>
+
+    <div class="gallery" id="gallery"></div>
+  </main>
+
+  <!-- Add / Edit Modal -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <h3 id="modal-title">이미지 추가</h3>
+      <div class="form-group">
+        <label>이미지 URL *</label>
+        <input type="url" id="img-url" placeholder="https://..." oninput="previewImage()">
+        <div class="preview-box" id="preview-box">
+          <img id="preview-img" alt="preview">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>제목</label>
+        <input type="text" id="img-title" placeholder="예: 콘크리트 텍스처 레퍼런스">
+      </div>
+      <div class="form-group">
+        <label>태그 (쉼표로 구분)</label>
+        <input type="text" id="img-tags" placeholder="예: 건축, 재료, 콘크리트">
+      </div>
+      <div class="form-group">
+        <label>메모 / 출처</label>
+        <textarea id="img-note" placeholder="Pinterest 링크, 메모 등"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal()">취소</button>
+        <button class="btn btn-primary" onclick="saveImage()">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox()">×</button>
+    <img id="lightbox-img" src="" alt="">
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ========== 설정 ==========
+    const GATE_PASSWORD = "warehouse";   // 비밀번호 변경 가능
+    // ==========================
+
+    let images = JSON.parse(localStorage.getItem("img_warehouse") || "[]");
+    let editingId = null;
+    let activeTag = null;
+
+    // Gate
+    function unlock() {
+      const val = document.getElementById("gate-input").value;
+      if (val === GATE_PASSWORD) {
+        document.getElementById("gate").classList.add("hidden");
+        sessionStorage.setItem("wh_auth", "1");
+      } else {
+        showToast("비밀번호가 틀렸습니다", "error");
+      }
+    }
+
+    if (sessionStorage.getItem("wh_auth") === "1") {
+      document.getElementById("gate").classList.add("hidden");
+    }
+
+    // Storage
+    function save() {
+      localStorage.setItem("img_warehouse", JSON.stringify(images));
+      render();
+    }
+
+    // Render
+    function render() {
+      const q = document.getElementById("search").value.toLowerCase().trim();
+      let list = images.slice().reverse();
+
+      if (activeTag) {
+        list = list.filter(i => i.tags.includes(activeTag));
+      }
+      if (q) {
+        list = list.filter(i =>
+          (i.title || "").toLowerCase().includes(q) ||
+          (i.note || "").toLowerCase().includes(q) ||
+          i.tags.some(t => t.toLowerCase().includes(q))
+        );
+      }
+
+      // Stats
+      document.getElementById("stat-total").textContent = images.length;
+      const allTags = [...new Set(images.flatMap(i => i.tags))];
+      document.getElementById("stat-tags").textContent = allTags.length;
+
+      // Tag filters
+      const tagFilters = document.getElementById("tag-filters");
+      tagFilters.innerHTML = `<div class="tag-chip ${!activeTag ? 'active' : ''}" onclick="setTag(null)">전체</div>`;
+      allTags.sort().forEach(t => {
+        tagFilters.innerHTML += `<div class="tag-chip ${activeTag === t ? 'active' : ''}" onclick="setTag('${t}')">${t}</div>`;
+      });
+
+      // Gallery
+      const gallery = document.getElementById("gallery");
+      if (list.length === 0) {
+        gallery.innerHTML = `
+          <div class="empty">
+            <div class="empty-icon">🖼️</div>
+            <p>아직 이미지가 없습니다</p>
+            <p style="margin-top:8px;font-size:13px">에이전트가 찾은 이미지 URL을 추가해보세요</p>
+          </div>`;
+        return;
+      }
+
+      gallery.innerHTML = list.map(img => `
+        <div class="card">
+          <div class="card-img-wrap" onclick="openLightbox('${escapeAttr(img.url)}')">
+            <img src="${escapeAttr(img.url)}" alt="${escapeAttr(img.title)}" loading="lazy"
+                 onerror="this.parentElement.innerHTML='<div class=\\'placeholder\\'>이미지를 불러올 수 없음</div>'">
+            <div class="card-actions">
+              <button class="icon-btn" title="수정" onclick="event.stopPropagation(); editImage('${img.id}')">✏️</button>
+              <button class="icon-btn" title="삭제" onclick="event.stopPropagation(); deleteImage('${img.id}')">🗑️</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-title">${escapeHtml(img.title || "제목 없음")}</div>
+            <div class="card-tags">
+              ${img.tags.map(t => `<span class="card-tag">${escapeHtml(t)}</span>`).join("")}
+            </div>
+            <div class="card-meta">${formatDate(img.created)}</div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function setTag(tag) {
+      activeTag = tag;
+      render();
+    }
+
+    // Modal
+    function openAddModal() {
+      editingId = null;
+      document.getElementById("modal-title").textContent = "이미지 추가";
+      document.getElementById("img-url").value = "";
+      document.getElementById("img-title").value = "";
+      document.getElementById("img-tags").value = "";
+      document.getElementById("img-note").value = "";
+      document.getElementById("preview-box").style.display = "none";
+      document.getElementById("modal").classList.add("show");
+      document.getElementById("img-url").focus();
+    }
+
+    function editImage(id) {
+      const img = images.find(i => i.id === id);
+      if (!img) return;
+      editingId = id;
+      document.getElementById("modal-title").textContent = "이미지 수정";
+      document.getElementById("img-url").value = img.url;
+      document.getElementById("img-title").value = img.title || "";
+      document.getElementById("img-tags").value = img.tags.join(", ");
+      document.getElementById("img-note").value = img.note || "";
+      previewImage();
+      document.getElementById("modal").classList.add("show");
+    }
+
+    function closeModal() {
+      document.getElementById("modal").classList.remove("show");
+    }
+
+    function previewImage() {
+      const url = document.getElementById("img-url").value.trim();
+      const box = document.getElementById("preview-box");
+      const img = document.getElementById("preview-img");
+      if (url && (url.startsWith("http") || url.startsWith("data:"))) {
+        img.src = url;
+        box.style.display = "block";
+      } else {
+        box.style.display = "none";
+      }
+    }
+
+    function saveImage() {
+      const url = document.getElementById("img-url").value.trim();
+      if (!url) {
+        showToast("이미지 URL을 입력하세요", "error");
+        return;
+      }
+
+      const title = document.getElementById("img-title").value.trim();
+      const tags = document.getElementById("img-tags").value
+        .split(",")
+        .map(t => t.trim())
+        .filter(Boolean);
+      const note = document.getElementById("img-note").value.trim();
+
+      if (editingId) {
+        const idx = images.findIndex(i => i.id === editingId);
+        if (idx !== -1) {
+          images[idx] = { ...images[idx], url, title, tags, note };
+        }
+        showToast("수정되었습니다", "success");
+      } else {
+        images.push({
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          url,
+          title,
+          tags,
+          note,
+          created: new Date().toISOString()
+        });
+        showToast("이미지가 추가되었습니다", "success");
+      }
+
+      save();
+      closeModal();
+    }
+
+    function deleteImage(id) {
+      if (!confirm("이 이미지를 삭제할까요?")) return;
+      images = images.filter(i => i.id !== id);
+      save();
+      showToast("삭제되었습니다", "success");
+    }
+
+    // Lightbox
+    function openLightbox(url) {
+      document.getElementById("lightbox-img").src = url;
+      document.getElementById("lightbox").classList.add("show");
+    }
+
+    function closeLightbox() {
+      document.getElementById("lightbox").classList.remove("show");
+    }
+
+    // Export / Import
+    function exportData() {
+      const data = JSON.stringify(images, null, 2);
+      const blob = new Blob([data], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `image-warehouse-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      showToast("내보내기 완료", "success");
+    }
+
+    function importData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          if (!Array.isArray(data)) throw new Error("Invalid format");
+          if (confirm(`${data.length}개의 이미지를 가져올까요? (기존 데이터와 합쳐집니다)`)) {
+            const existingIds = new Set(images.map(i => i.id));
+            data.forEach(item => {
+              if (!existingIds.has(item.id)) images.push(item);
+            });
+            save();
+            showToast("가져오기 완료", "success");
+          }
+        } catch {
+          showToast("올바른 JSON 파일이 아닙니다", "error");
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = "";
+    }
+
+    // Helpers
+    function showToast(msg, type = "") {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.className = "toast show " + type;
+      setTimeout(() => t.classList.remove("show"), 2500);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function escapeAttr(str) {
+      return String(str).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+    }
+
+    function formatDate(iso) {
+      if (!iso) return "";
+      const d = new Date(iso);
+      return d.toLocaleDateString("ko-KR", { year: "numeric", month: "short", day: "numeric" });
+    }
+
+    // Init
+    render();
+
+    // Close modal on outside click
+    document.getElementById("modal").addEventListener("click", (e) => {
+      if (e.target.id === "modal") closeModal();
+    });
+  </script>
+</body>
+</html>
